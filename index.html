@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>洛克王国 生蛋组别查询器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            min-height: 100vh;
+            padding: 20px;
+            color: #fff;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.2em;
+            margin-bottom: 30px;
+            color: #ffd700;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        #search-input {
+            flex: 1;
+            padding: 15px 20px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 10px;
+            outline: none;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+        }
+
+        #search-btn {
+            padding: 15px 30px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 10px;
+            background: #ff6b6b;
+            color: white;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        #search-btn:hover {
+            background: #ff5252;
+        }
+
+        .result-area {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .group-title {
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            color: #4ecdc4;
+        }
+
+        .group-section {
+            margin-bottom: 25px;
+            padding: 15px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+        }
+
+        .group-section h3 {
+            margin-bottom: 12px;
+            color: #ffd700;
+        }
+
+        .sprite-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 10px;
+        }
+
+        .sprite-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            transition: background 0.3s;
+        }
+
+        .sprite-item:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .highlight {
+            background: rgba(255, 215, 0, 0.3) !important;
+            border: 1px solid #ffd700;
+        }
+
+        .no-result {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2em;
+            color: #ccc;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>洛克王国 生蛋组别查询器</h1>
+        <div class="search-box">
+            <input type="text" id="search-input" placeholder="输入精灵名（支持模糊查询，如：鸡、鸟）">
+            <button id="search-btn">查询</button>
+        </div>
+
+        <div id="result-area" class="result-area">
+            <div class="group-title" id="main-title"></div>
+            <div id="group-container"></div>
+        </div>
+    </div>
+
+    <script>
+        // 完整补充所有图片中的组别和精灵
+        const groupData = {
+            "两栖组": [
+                "海豹船长", "水泡壳", "卷胡巨獭", "卡瓦重", "鳗尾兽",
+                "游蛇魔使", "嗜波螺", "寒音蛇", "石冠王蜥", "天鹅"
+            ],
+            "机械组": [
+                "立方人", "权杖", "声波缇塔", "机甲小子",
+                "圣剑", "溯源钟", "帕帕斯卡", "波多西", "迷迷箱怪"
+            ],
+            "矿石组": [
+                "晶石蜗", "记忆石", "石冠王蜥", "布克棱岩", "罗隐",
+                "巨灵石", "嗜波螺", "仪式巨像"
+            ],
+            "天空组": [
+                "鸭吉吉", "岚鸟", "翠顶夫人", "黑羽夫人", "花魁蜂后",
+                "魔眷鸟", "锤头鹤", "咔咔鸟", "高脚鹬", "班枭", "皇家狮鹫",
+                "溯源钟", "噼啪鸟", "泥吼牙", "火羽", "星云旅者", "翼龙",
+                "公平鸽", "卷毛鸭", "绅士鸡", "武者鸡", "多灵主",
+                "帕帕斯卡", "彩蝶鲨", "粉星仔", "厉毒修萝"
+            ],
+            "海洋组": [
+                "千棘盔", "利灯鱼", "彩蝶鲨", "月亮砣", "龙鱼",
+                "闪电鳗鱼", "琉璃水母", "里拉鳐", "海枝枝",
+                "圆号鱼", "果冻", "深蓝鲸"
+            ],
+            "植物组": [
+                "幽影树", "蹦蹦花", "幻影灵菇", "蒲公英娃娃", "伊贝粉粉",
+                "兽花蕾", "奇丽花", "菊花梨", "怖哭菇", "九幽菇", "格兰球",
+                "燃薪虫", "海枝枝"
+            ],
+            "动物组": [
+                "魔力猫", "音速犬", "蹦床松鼠", "电咩咩", "巨噬针",
+                "星光狮", "花影羚羊", "恶魔狼", "尖嘴狐仙", "针叶巡林",
+                "炽心勇狮", "爵士鹿", "皇家狮鹫", "寒音蛇", "裘卡",
+                "黑猫巫师", "春花兔", "火焰猿", "怒目怂猫", "壳栗丝鼠",
+                "地鼠", "白金独角兽", "獠牙猪", "白发路路", "冰钻布鲁斯"
+            ],
+            "妖精组": [
+                "嘟嘟锅", "红绒十字", "朔夜伊芙", "叮叮恶魔", "仪式巨像",
+                "帅帅魔偶", "雪影娃娃", "梦想三三", "棋棋", "迷迷箱怪",
+                "卡拉波斯", "粉星仔", "黑猫巫师", "小皮球", "画精灵",
+                "书魔虫", "梦悠悠", "酷拉", "雪灵", "裘卡", "立方人",
+                "格兰球", "里拉鳐", "幽影树", "兽花蕾", "春花兔",
+                "暮星辰", "卡洛儿"
+            ],
+            "巨龙组": [
+                "翼龙", "龙鱼", "伊兰亚龙", "寂灭骨龙"
+            ]
+        };
+
+        // 构建精灵到所有所属组别的映射
+        const spriteToGroupMap = {};
+        for (const groupName in groupData) {
+            groupData[groupName].forEach(sprite => {
+                if (!spriteToGroupMap[sprite]) {
+                    spriteToGroupMap[sprite] = [];
+                }
+                spriteToGroupMap[sprite].push(groupName);
+            });
+        }
+
+        const searchInput = document.getElementById('search-input');
+        const searchBtn = document.getElementById('search-btn');
+        const resultArea = document.getElementById('result-area');
+        const mainTitle = document.getElementById('main-title');
+        const groupContainer = document.getElementById('group-container');
+
+        function searchSprite() {
+            const keyword = searchInput.value.trim();
+            if (!keyword) {
+                alert('请输入精灵名！');
+                return;
+            }
+
+            // 模糊匹配精灵名
+            const matchedSprites = Object.keys(spriteToGroupMap).filter(name => 
+                name.includes(keyword)
+            );
+
+            if (matchedSprites.length === 0) {
+                resultArea.style.display = 'block';
+                mainTitle.textContent = `未找到包含 "${keyword}" 的精灵`;
+                groupContainer.innerHTML = '<div class="no-result">请检查输入是否正确~</div>';
+                return;
+            }
+
+            // 取第一个匹配的精灵
+            const targetSprite = matchedSprites[0];
+            const groups = spriteToGroupMap[targetSprite];
+
+            // 渲染结果
+            resultArea.style.display = 'block';
+            mainTitle.textContent = `找到精灵【${targetSprite}】，它属于以下组别：`;
+            groupContainer.innerHTML = '';
+
+            // 遍历该精灵的所有组别，分别渲染
+            groups.forEach(groupName => {
+                const allSpritesInGroup = groupData[groupName];
+                
+                const sectionDiv = document.createElement('div');
+                sectionDiv.className = 'group-section';
+                
+                const h3 = document.createElement('h3');
+                h3.textContent = `【${groupName}】`;
+                sectionDiv.appendChild(h3);
+
+                const gridDiv = document.createElement('div');
+                gridDiv.className = 'sprite-grid';
+
+                allSpritesInGroup.forEach(sprite => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'sprite-item';
+                    if (sprite === targetSprite) {
+                        itemDiv.classList.add('highlight');
+                    }
+                    itemDiv.textContent = sprite;
+                    gridDiv.appendChild(itemDiv);
+                });
+
+                sectionDiv.appendChild(gridDiv);
+                groupContainer.appendChild(sectionDiv);
+            });
+        }
+
+        // 绑定事件
+        searchBtn.addEventListener('click', searchSprite);
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                searchSprite();
+            }
+        });
+    </script>
+</body>
+</html>
