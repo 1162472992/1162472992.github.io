@@ -126,7 +126,7 @@ const PATH_CONFIG = {
     }
   },
   getImageUrl(fileName) {
-    return this.isLocal ? `./pet-img/${fileName}` : this.github.baseUrl + fileName;
+	  return `pet-img/${fileName}`;
   }
 };
 PATH_CONFIG.init();
