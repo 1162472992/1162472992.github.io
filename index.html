@@ -117,16 +117,9 @@ body{background:#f5f5f5;padding:20px}
 
 <script>
 const PATH_CONFIG = {
-  isLocal: window.location.protocol === "file:" || window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1",
-  github: { user: "1162472992", repo: "", baseUrl: "" },
-  init() {
-    if (!this.isLocal) {
-      // 你的真实 GitHub Pages 地址
-      this.github.baseUrl = `https://1162472992.github.io/pet-img/`;
-    }
-  },
+  // 全部使用 jsDelivr 加速，国内超快
   getImageUrl(fileName) {
-	  return `pet-img/${fileName}`;
+    return `https://cdn.jsdelivr.net/gh/1162472992/imgs@main/pet-img/${fileName}`;
   }
 };
 PATH_CONFIG.init();
