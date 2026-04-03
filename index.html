@@ -6,10 +6,10 @@
 <title>洛克王国世界 - 孵蛋查询</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Microsoft Yahei", sans-serif; }
-body { background: #f5f5f5; padding: 10px; } /* 手机端减少页面边距 */
+body { background: #f5f5f5; padding: 10px; }
 .container { max-width: 1400px; margin: 0 auto; background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); overflow: hidden; }
 .header { background: linear-gradient(135deg, #ff9a9e 0, #fecfef 100%); padding: 15px; text-align: center; color: white; position: relative; }
-.header h1 { font-size: 22px; } /* 手机端标题缩小 */
+.header h1 { font-size: 22px; }
 .back-btn { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); padding: 6px 12px; background: rgba(255,255,255,0.3); color: white; border: none; border-radius: 6px; cursor: pointer; display: none; }
 .back-btn:hover { background: rgba(255,255,255,0.5); }
 
@@ -25,19 +25,16 @@ body { background: #f5f5f5; padding: 10px; } /* 手机端减少页面边距 */
 .egg-group-tab { padding: 6px 12px; border-radius: 20px; background: #f0f0f0; cursor: pointer; font-size: 13px; border: none; }
 .egg-group-tab.active { background: #ff6b81; color: white; }
 
-/* 核心修改：适配不同屏幕的卡片宽度 */
 .pet-grid, .match-list {
   display: grid;
   gap: 10px;
   padding: 15px;
-  /* PC 端：保持原来的180px */
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
 }
 
-/* 手机端（宽度<768px）：缩小卡片 */
 @media (max-width: 768px) {
   .pet-grid, .match-list {
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); /* 最小宽度改为100px */
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
     gap: 8px;
     padding: 10px;
   }
@@ -139,6 +136,7 @@ const PATH_CONFIG = {
   }
 };
 
+// ====================== 核心修改：增加 alias 别名 ======================
 const petData = [
 { name: "格斗小八", groups: ["拟人组"] },
 { name: "格斗小六", groups: ["拟人组"] },
@@ -159,7 +157,9 @@ const petData = [
 { name: "武者鸡", groups: ["拟人组","天空组"] },
 { name: "绅士鸡", groups: ["拟人组","天空组"] },
 { name: "雪影娃娃", groups: ["拟人组","妖精组"] },
-{ name: "立方人", groups: ["拟人组","机械组"] },
+
+// ✅ 在这里加 alias：搜索“机械方方”自动匹配立方人
+{ name: "立方人", groups: ["拟人组","机械组"], alias: ["机械方方"] },
 
 { name: "卡洛儿", groups: ["妖精组","乖乖组"] },
 { name: "龙鱼", groups: ["妖精组","海洋组","巨龙组"] },
@@ -320,7 +320,6 @@ function createImageElement(url) {
   img.style.height = "100%";
   img.style.objectFit = "cover";
   container.appendChild(img);
-
   img.onerror = function() {
     container.innerHTML = "";
     container.innerText = "暂无素材";
@@ -333,24 +332,26 @@ function getEggImageUrl(petName, type) { return PATH_CONFIG.getImageUrl(`${petNa
 
 function openEggModal(petName) {
   dom.eggModalTitle.textContent = `${petName} 孵蛋预览`;
-  
   dom.eggNormalContainer.innerHTML = "";
   dom.eggNormalContainer.appendChild(createImageElement(getEggImageUrl(petName, "普通")));
-  
   dom.eggSpecialContainer.innerHTML = "";
   dom.eggSpecialContainer.appendChild(createImageElement(getEggImageUrl(petName, "异色")));
-  
   dom.eggRainbowContainer.innerHTML = "";
   dom.eggRainbowContainer.appendChild(createImageElement(getEggImageUrl(petName, "炫彩")));
-
   dom.eggModalOverlay.style.display = "flex";
 }
 
 function closeEggModal() { dom.eggModalOverlay.style.display = "none"; }
 
+// ====================== 搜索支持 名称 + 别名 ======================
 function renderPetList(group = "全部", keyword = "") {
   dom.petGrid.innerHTML = "";
-  const list = petData.filter(p => (group === "全部" || p.groups.includes(group)) && p.name.includes(keyword));
+  const list = petData.filter(p => {
+    const matchGroup = group === "全部" || p.groups.includes(group);
+    const matchName = p.name.includes(keyword);
+    const matchAlias = p.alias && p.alias.some(a => a.includes(keyword));
+    return matchGroup && (matchName || matchAlias);
+  });
   list.forEach(p => {
     const el = document.createElement("div");
     el.className = "pet-card";
@@ -363,6 +364,13 @@ function renderPetList(group = "全部", keyword = "") {
     el.onclick = () => openPetDetail(p.name);
     dom.petGrid.appendChild(el);
   });
+}
+
+// ====================== 精确搜索也支持别名 ======================
+function findPetByNameOrAlias(key) {
+  return petData.find(p => 
+    p.name === key || (p.alias && p.alias.includes(key))
+  );
 }
 
 function openPetDetail(petName) {
@@ -403,7 +411,7 @@ function goBackToHome() {
 document.querySelector(".search-btn").onclick = () => {
   const kw = dom.searchInput.value.trim();
   if (!kw) return alert("请输入宠物名称");
-  const p = petData.find(x => x.name === kw);
+  const p = findPetByNameOrAlias(kw);
   p ? openPetDetail(p.name) : alert("未找到");
 };
 
