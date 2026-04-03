@@ -419,8 +419,38 @@ document.querySelector(".clear-btn").onclick = () => { dom.searchInput.value = "
 dom.backBtn.onclick = goBackToHome;
 dom.eggCloseBtn.onclick = closeEggModal;
 dom.eggModalOverlay.onclick = e => e.target === dom.eggModalOverlay && closeEggModal();
-dom.searchInput.oninput = () => renderPetList(document.querySelector(".egg-group-tab.active").dataset.group, dom.searchInput.value);
-dom.searchInput.onkeydown = e => e.key === "Enter" && document.querySelector(".search-btn").click();
+
+// 搜索逻辑：使用定时器轮询，避免与输入法冲突
+let lastSearchValue = '';
+let searchInterval = null;
+
+// 当输入框获得焦点时开始轮询
+dom.searchInput.addEventListener('focus', () => {
+  if (searchInterval) return;
+  searchInterval = setInterval(() => {
+    const currentValue = dom.searchInput.value;
+    if (currentValue !== lastSearchValue) {
+      lastSearchValue = currentValue;
+      renderPetList(document.querySelector(".egg-group-tab.active").dataset.group, currentValue);
+    }
+  }, 200);
+});
+
+// 当输入框失去焦点时停止轮询
+dom.searchInput.addEventListener('blur', () => {
+  if (searchInterval) {
+    clearInterval(searchInterval);
+    searchInterval = null;
+  }
+});
+
+// Enter键触发搜索
+dom.searchInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    document.querySelector(".search-btn").click();
+  }
+});
 
 document.querySelectorAll(".egg-group-tab").forEach(tab => {
   tab.onclick = () => {
